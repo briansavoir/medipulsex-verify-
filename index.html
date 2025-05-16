@@ -121,7 +121,7 @@
 
     // 自動填入網址參數並觸發驗證
     window.onload = () => {
-      const params = new URLSearchParams(window.location.search);
+      const params = new URLSearchParams(window.parent.location.search);
       const rid = params.get("id");
       const d = params.get("d");
       const t = params.get("t");
