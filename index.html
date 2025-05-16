@@ -2,61 +2,140 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>MediPulse X Verification</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediPulse X Report Verification</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    body { font-family: sans-serif; background: #f4f4f4; padding: 2em; }
-    .container { max-width: 600px; margin: auto; background: white; padding: 2em; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    label { font-weight: bold; display: block; margin-top: 1em; }
-    input { width: 100%; padding: 0.5em; margin-top: 0.25em; }
-    button { margin-top: 1.5em; padding: 0.7em 1.2em; font-size: 1em; background: #0056d2; color: white; border: none; border-radius: 4px; cursor: pointer; }
-    button:hover { background: #0040a8; }
-    .result { margin-top: 1.5em; padding: 1em; border-radius: 6px; font-weight: bold; }
-    .valid { background-color: #d1f7d6; color: #256029; }
-    .invalid { background-color: #fddede; color: #812525; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f4f8fc;
+      padding: 2rem;
+      color: #222;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    h1 {
+      text-align: center;
+      font-weight: 600;
+    }
+    label {
+      font-weight: 600;
+      display: block;
+      margin-top: 1rem;
+    }
+    input {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.25rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      margin-top: 1.5rem;
+      width: 100%;
+      background-color: #0056d2;
+      color: white;
+      padding: 0.75rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0040a8;
+    }
+    .result {
+      margin-top: 1.5rem;
+      font-weight: 600;
+      padding: 1rem;
+      border-radius: 6px;
+    }
+    .valid {
+      background-color: #d1f7d6;
+      color: #256029;
+    }
+    .invalid {
+      background-color: #fddede;
+      color: #812525;
+    }
   </style>
 </head>
 <body>
-<div class="container">
-  <h1>MediPulse X Verification</h1>
-  <label>Record ID</label>
-  <input id="record_id" placeholder="ecg_P001_202505171430__ABC123">
-  <label>Diagnosis</label>
-  <input id="diagnosis" placeholder="AFIB">
-  <label>Timestamp</label>
-  <input id="timestamp" placeholder="2025-05-17 14:32:10">
-  <label>Validation Code</label>
-  <input id="code" placeholder="A1B2C3">
-  <button onclick="verify()">Verify</button>
-  <div id="result" class="result" style="display:none"></div>
-</div>
-<script>
-function sha256(str) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(str);
-  return crypto.subtle.digest('SHA-256', data).then(d => {
-    return Array.from(new Uint8Array(d)).map(b => b.toString(16).padStart(2, '0')).join('');
-  });
-}
-async function verify() {
-  const rid = document.getElementById('record_id').value.trim();
-  const d = document.getElementById('diagnosis').value.trim();
-  const ts = document.getElementById('timestamp').value.trim();
-  const code = document.getElementById('code').value.trim().toUpperCase();
-  const secret = "MediPulseX2025Key";
-  const base = `${rid}-${d}-${ts}-${secret}`;
-  const hash = await sha256(base);
-  const expected = hash.substring(0,6).toUpperCase();
-  const result = document.getElementById('result');
-  if (code === expected) {
-    result.innerText = "✅ Valid report. Signature matches.";
-    result.className = "result valid";
-  } else {
-    result.innerText = "❌ Invalid report. Signature mismatch.";
-    result.className = "result invalid";
-  }
-  result.style.display = "block";
-}
-</script>
+  <div class="container">
+    <h1>MediPulse X Report Verification</h1>
+    <label for="record_id">Record ID</label>
+    <input type="text" id="record_id" placeholder="e.g., ecg_P001_20250517_123456__ABC123">
+
+    <label for="diagnosis">Diagnosis</label>
+    <input type="text" id="diagnosis" placeholder="e.g., AFIB">
+
+    <label for="timestamp">Timestamp</label>
+    <input type="text" id="timestamp" placeholder="e.g., 2025-05-17 14:32:10">
+
+    <label for="code">Validation Code</label>
+    <input type="text" id="code" placeholder="e.g., 4FAD3B">
+
+    <button onclick="verify()">Verify Report</button>
+
+    <div id="result" class="result" style="display: none;"></div>
+  </div>
+
+  <script>
+    function sha256(str) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(str);
+      return crypto.subtle.digest('SHA-256', data).then(hash => {
+        return Array.from(new Uint8Array(hash))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+      });
+    }
+
+    async function verify() {
+      const record_id = document.getElementById('record_id').value.trim();
+      const diagnosis = document.getElementById('diagnosis').value.trim();
+      const timestamp = document.getElementById('timestamp').value.trim();
+      const code = document.getElementById('code').value.trim().toUpperCase();
+      const secret = "MediPulseX2025Key";
+
+      const base = `${record_id}-${diagnosis}-${timestamp}-${secret}`;
+      const hash = await sha256(base);
+      const expected = hash.substring(0, 6).toUpperCase();
+
+      const resultDiv = document.getElementById('result');
+      if (code === expected) {
+        resultDiv.textContent = `✅ Valid report. Signature matches.`;
+        resultDiv.className = 'result valid';
+      } else {
+        resultDiv.textContent = `❌ Invalid report. Signature mismatch.`;
+        resultDiv.className = 'result invalid';
+      }
+      resultDiv.style.display = 'block';
+    }
+
+    // 自動填入網址參數並觸發驗證
+    window.onload = () => {
+      const params = new URLSearchParams(window.location.search);
+      const rid = params.get("id");
+      const d = params.get("d");
+      const t = params.get("t");
+      const v = params.get("v");
+
+      if (rid) document.getElementById('record_id').value = rid;
+      if (d) document.getElementById('diagnosis').value = d;
+      if (t) document.getElementById('timestamp').value = t;
+      if (v) document.getElementById('code').value = v;
+
+      if (rid && d && t && v) {
+        verify();
+      }
+    };
+  </script>
 </body>
 </html>
