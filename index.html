@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MediPulse X Verification</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: sans-serif; background: #f4f4f4; padding: 2em; }
+    .container { max-width: 600px; margin: auto; background: white; padding: 2em; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    label { font-weight: bold; display: block; margin-top: 1em; }
+    input { width: 100%; padding: 0.5em; margin-top: 0.25em; }
+    button { margin-top: 1.5em; padding: 0.7em 1.2em; font-size: 1em; background: #0056d2; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #0040a8; }
+    .result { margin-top: 1.5em; padding: 1em; border-radius: 6px; font-weight: bold; }
+    .valid { background-color: #d1f7d6; color: #256029; }
+    .invalid { background-color: #fddede; color: #812525; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>MediPulse X Verification</h1>
+  <label>Record ID</label>
+  <input id="record_id" placeholder="ecg_P001_202505171430__ABC123">
+  <label>Diagnosis</label>
+  <input id="diagnosis" placeholder="AFIB">
+  <label>Timestamp</label>
+  <input id="timestamp" placeholder="2025-05-17 14:32:10">
+  <label>Validation Code</label>
+  <input id="code" placeholder="A1B2C3">
+  <button onclick="verify()">Verify</button>
+  <div id="result" class="result" style="display:none"></div>
+</div>
+<script>
+function sha256(str) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(str);
+  return crypto.subtle.digest('SHA-256', data).then(d => {
+    return Array.from(new Uint8Array(d)).map(b => b.toString(16).padStart(2, '0')).join('');
+  });
+}
+async function verify() {
+  const rid = document.getElementById('record_id').value.trim();
+  const d = document.getElementById('diagnosis').value.trim();
+  const ts = document.getElementById('timestamp').value.trim();
+  const code = document.getElementById('code').value.trim().toUpperCase();
+  const secret = "MediPulseX2025Key";
+  const base = `${rid}-${d}-${ts}-${secret}`;
+  const hash = await sha256(base);
+  const expected = hash.substring(0,6).toUpperCase();
+  const result = document.getElementById('result');
+  if (code === expected) {
+    result.innerText = "✅ Valid report. Signature matches.";
+    result.className = "result valid";
+  } else {
+    result.innerText = "❌ Invalid report. Signature mismatch.";
+    result.className = "result invalid";
+  }
+  result.style.display = "block";
+}
+</script>
+</body>
+</html>
